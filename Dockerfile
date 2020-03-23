@@ -1,26 +1,44 @@
 FROM debian:buster
 
-ENV DEBIAN_FRONTEND noninteractive
+LABEL maintainer="jcueille@student.42.fr"
+
+WORKDIR /tmp/
+
+#############################
+# Installing required tools #
+#############################
 
 RUN apt update && \
-    apt-get upgrade
-RUN apt-get install -y dialog apt-utils
-RUN apt-get install -y wget 
-RUN apt-get install -y nginx 
-RUN apt-get install -y mariadb-server 
-RUN apt-get install -y php7.3 php7.3-fpm php7.3-mysql php-common php7.3-cli php7.3-common php7.3-json php7.3-opcache php7.3-readline 
-RUN apt-get install -y libnss3-tools
-COPY srcs/wordpress /var/www/html
+    apt-get upgrade -y && \
+    apt-get install -y wget && \ 
+    apt-get install -y gnupg2 wget apt-utils && \
+    apt-get install -y nginx && \
+    apt-get install -y mariadb-server && \
+    apt-get install -y php7.3 php7.3-fpm php7.3-mysql php-common php7.3-cli php7.3-common php7.3-json php7.3-opcache php7.3-readline
+
+#####################
+# Phpmyadmin install#
+#####################
+
+RUN wget -O phpmyadmin.tar.gz https://files.phpmyadmin.net/phpMyAdmin/5.0.0/phpMyAdmin-5.0.0-english.tar.gz && \
+    mkdir /var/www/html/phpmyadmin && \
+    tar -xvf phpmyadmin.tar.gz --strip-components=1 -C /var/www/html/phpmyadmin && \
+    rm phpmyadmin.tar.gz
+
+###########################
+# Wordpress / Nginx setup #
+###########################
+
+RUN rm -f /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+RUN wget -O latest.tar.gz https://wordpress.org/latest.tar.gz
+RUN mkdir /var/www/html/wordpress
+RUN tar -xvf latest.tar.gz --strip-components=1 -C /var/www/html/wordpress
+RUN rm latest.tar.gz
 COPY srcs/default.conf /etc/nginx/sites-available
 RUN cd /var/www/html
-RUN wget -O phpmyadmin.tar.gz https://files.phpmyadmin.net/phpMyAdmin/5.0.0/phpMyAdmin-5.0.0-english.tar.gz
-RUN tar -xvf phpmyadmin.tar.gz
-RUN rm phpmyadmin.tar.gz
-RUN mv phpMyAdmin-5.0.0-english phpmyadmin 
 
 # Creating DB
-
-RUN service mysql restart
-RUN mysql -u root -p
+COPY srcs/sql.sh /var/www/html
+ENTRYPOINT ["/bin/sh", "/var/www/html/sql.sh"]
 
 
