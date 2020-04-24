@@ -1,10 +1,16 @@
+FROM debian:buster
+
 LABEL maintainer="jcueille@student.42.fr"
 
 WORKDIR /tmp
 
 #############################
 # Installing required tools #
+#############################
 RUN apt update && \
+apt upgrade -y && \
+apt install nginx -y && \
+apt-get install -y gnupg2 wget apt-utils && \
 apt-get install -y mariadb-server && \
 apt-get install -y php7.3 php7.3-fpm php7.3-mysql php-common php7.3-cli php7.3-common php7.3-json php7.3-opcache php7.3-readline
 
@@ -18,7 +24,9 @@ COPY /srcs/server.crt /tmp
 #####################
 # Phpmyadmin install#
 #####################
-RUN wget -O phpmyadmin.tar.gz https://files.phpmyadmin.net/phpMyAdmin/5.0.0/phpM
+RUN wget -O phpmyadmin.tar.gz https://files.phpmyadmin.net/phpMyAdmin/5.0.2/phpMyAdmin-5.0.2-english.tar.gz && \
+mkdir /var/www/html/phpmyadmin && \
+tar xzf phpmyadmin.tar.gz --strip-components=1 -C /var/www/html/phpmyadmin
 ###########################
 # Wordpress / Nginx setup #
 ###########################
@@ -35,5 +43,3 @@ RUN ln -s /etc/nginx/sites-available/config /etc/nginx/sites-enabled/
 # Creating DB
 COPY srcs/sql.sh .
 ENTRYPOINT ["/bin/sh", "/tmp/sql.sh"]
-
-
